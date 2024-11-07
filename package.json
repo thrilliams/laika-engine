@@ -1,0 +1,17 @@
+{
+	"name": "laika-engine",
+	"version": "0.0.0",
+	"description": "a bare-bones typescript state machine/game engine",
+	"homepage": "https://github.com/thrilliams/laika-engine",
+	"bugs": "https://github.com/thrilliams/laika-engine/issues",
+	"license": "MIT",
+	"author": "juniper williams <juniper@aethre.co> (https://aethre.co/)",
+	"main": "src/index.ts",
+	"type": "module",
+	"dependencies": {
+		"immer": "^10.1.1"
+	},
+	"devDependencies": {
+		"zod": "^3.23.8"
+	}
+}
