@@ -202,7 +202,7 @@ export function createGame<Game extends GameType, Options>(parameters: {
 				);
 
 				// if any next entries were produced, append those
-				if (next) draft.next.push(...castDraft(next));
+				if (next) draft.next.unshift(...castDraft(next));
 
 				// as long as we don't yet have a valid deicision and do have next entries to pull from, resolve those one at a time
 				while (!decision && draft.next.length > 0) {
@@ -213,7 +213,7 @@ export function createGame<Game extends GameType, Options>(parameters: {
 						first as Immutable<Next<Decision, Interrupt>>
 					);
 
-					if (next) draft.next.push(...castDraft(next));
+					if (next) draft.next.unshift(...castDraft(next));
 				}
 
 				// if we exhaust those, ensure we have a valid state by producing the fallback decision
