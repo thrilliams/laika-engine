@@ -7,8 +7,9 @@ export function addHistoryObject<G extends GameType>(
 	game: G,
 	choice: ChoiceOf<G>,
 	patches: Patch[],
-	inversePatches: Patch[]
+	inversePatches: Patch[],
+	id?: string
 ) {
-	const id = uuid();
+	if (id === undefined) id = uuid();
 	game.history.push({ id, choice, patches, inversePatches });
 }

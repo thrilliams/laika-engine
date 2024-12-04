@@ -9,6 +9,7 @@ import { addHistoryObject } from "./gameLogic/addHistoryObject";
 import { createInitialGameState } from "./gameLogic/createInitialGameState";
 import { reduceDecision } from "./gameLogic/reduceDecision";
 import { reduceNext } from "./gameLogic/reduceNext";
+import { uuid } from "./gameLogic/uuid";
 import { validateChoiceFromModel } from "./gameLogic/validateChoiceFromModel";
 import type { GameType } from "./gameType/GameType";
 import type { Next } from "./gameType/Next";
@@ -22,6 +23,7 @@ import type {
 import type {
 	DecisionReducers,
 	InterruptReducers,
+	Logger,
 } from "./helperTypes/Reducers";
 
 /**
@@ -93,15 +95,27 @@ export function createGame<Game extends GameType, Options>(parameters: {
 		// we don't do any fancy error handling because we expect choices to have already been validated
 		if (!success) throw error;
 
+		const id = uuid();
+
 		const [nextState, patches, inversePatches] = produceWithPatches(
 			game.state,
 			(draft) => {
+				const logger: Logger<Game> = (stringParts, ...context) =>
+					draft.log.push(
+						castDraft({
+							historyObjectID: id,
+							stringParts,
+							context,
+						})
+					);
+
 				// first, attempt regular resolution for the current decision
 				let [decision, ...next] = reduceDecision(
 					parameters.decisionReducers,
 					draft.model as Draft<Model>,
 					draft.decision as Immutable<Decision>,
-					validatedChoice
+					validatedChoice,
+					logger
 				);
 
 				// if any next entries were produced, append those
@@ -114,7 +128,8 @@ export function createGame<Game extends GameType, Options>(parameters: {
 					[decision, ...next] = reduceNext(
 						parameters.interruptReducers,
 						draft.model as Draft<Model>,
-						first as Immutable<Next<Decision, Interrupt>>
+						first as Immutable<Next<Decision, Interrupt>>,
+						logger
 					);
 
 					if (next) draft.next.unshift(...castDraft(next));
@@ -142,7 +157,8 @@ export function createGame<Game extends GameType, Options>(parameters: {
 			game,
 			validatedChoice as Choice,
 			patches,
-			inversePatches
+			inversePatches,
+			id
 		);
 	}
 

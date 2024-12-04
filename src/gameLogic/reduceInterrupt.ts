@@ -7,6 +7,7 @@ import type {
 } from "../helperTypes/GameDerivers";
 import type {
 	InterruptReducers,
+	Logger,
 	ReducerReturnType,
 } from "../helperTypes/Reducers";
 
@@ -22,9 +23,10 @@ export function reduceInterrupt<
 >(
 	interruptReducers: InterruptReducers<Game>,
 	model: Draft<ModelOf<Game>>,
-	interrupt: Immutable<InterruptOf<Game> & { type: T }>
+	interrupt: Immutable<InterruptOf<Game> & { type: T }>,
+	logger: Logger<Game>
 ): ReducerReturnType<DecisionOf<Game>, InterruptOf<Game>> {
 	const reducer = interruptReducers[interrupt.type as T];
 	if (reducer === undefined) throw "unexpected interrupt type";
-	return reducer(model, interrupt);
+	return reducer(model, interrupt, logger);
 }

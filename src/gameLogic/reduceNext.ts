@@ -8,6 +8,7 @@ import type {
 } from "../helperTypes/GameDerivers";
 import type {
 	InterruptReducers,
+	Logger,
 	ReducerReturnType,
 } from "../helperTypes/Reducers";
 import { reduceInterrupt } from "./reduceInterrupt";
@@ -21,10 +22,11 @@ import { reduceInterrupt } from "./reduceInterrupt";
 export function reduceNext<Game extends GameType>(
 	interruptReducers: InterruptReducers<Game>,
 	model: Draft<ModelOf<Game>>,
-	next: Immutable<Next<DecisionOf<Game>, InterruptOf<Game>>>
+	next: Immutable<Next<DecisionOf<Game>, InterruptOf<Game>>>,
+	logger: Logger<Game>
 ): ReducerReturnType<DecisionOf<Game>, InterruptOf<Game>> {
 	if (next.kind === "decision") return [next.value as DecisionOf<Game>];
 	if (next.kind === "interrupt")
-		return reduceInterrupt(interruptReducers, model, next.value);
+		return reduceInterrupt(interruptReducers, model, next.value, logger);
 	throw "unexpected next kind";
 }

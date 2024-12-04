@@ -5,8 +5,14 @@ import type {
 	ChoiceOf,
 	DecisionOf,
 	InterruptOf,
+	LogObjectContextOf,
 	ModelOf,
 } from "./GameDerivers";
+
+export type Logger<Game extends GameType> = (
+	stringParts: TemplateStringsArray,
+	...context: LogObjectContextOf<Game>[]
+) => void;
 
 export type ReducerReturnType<Decision, Interrupt> =
 	| [Decision, ...Next<Decision, Interrupt>[]]
@@ -18,7 +24,8 @@ export type DecisionReducer<
 > = (
 	model: Draft<ModelOf<Game>>,
 	decision: Immutable<DecisionOf<Game> & { type: T }>,
-	choice: Immutable<ChoiceOf<Game> & { type: T }>
+	choice: Immutable<ChoiceOf<Game> & { type: T }>,
+	logger: Logger<Game>
 ) => ReducerReturnType<DecisionOf<Game>, InterruptOf<Game>>;
 
 export type DecisionReducers<Game extends GameType> = {
@@ -30,7 +37,8 @@ export type InterruptReducer<
 	T extends InterruptOf<Game>["type"]
 > = (
 	model: Draft<ModelOf<Game>>,
-	interrupt: Immutable<InterruptOf<Game> & { type: T }>
+	interrupt: Immutable<InterruptOf<Game> & { type: T }>,
+	logger: Logger<Game>
 ) => ReducerReturnType<DecisionOf<Game>, InterruptOf<Game>>;
 
 export type InterruptReducers<Game extends GameType> = {

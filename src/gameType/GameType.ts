@@ -8,9 +8,10 @@ export interface GameType<
 	Choice extends TypedObject<Decision["type"]> = TypedObject<
 		Decision["type"]
 	>,
-	Interrupt extends TypedObject = TypedObject
+	Interrupt extends TypedObject = TypedObject,
+	LogObjectContext = unknown
 > {
-	state: Payload<Model, Decision, Interrupt>;
+	state: Payload<Model, Decision, Interrupt, LogObjectContext>;
 	future: HistoryObject<Choice>[];
 	history: HistoryObject<Choice>[];
 }

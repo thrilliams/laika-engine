@@ -17,3 +17,13 @@ export type InterruptOf<G extends GameType> = G extends GameType<
 >
 	? I
 	: never;
+
+export type LogObjectContextOf<G extends GameType> = G extends GameType<
+	any,
+	any,
+	any,
+	any,
+	infer C
+>
+	? C
+	: never;

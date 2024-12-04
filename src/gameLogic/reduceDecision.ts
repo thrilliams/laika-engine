@@ -8,6 +8,7 @@ import type {
 } from "../helperTypes/GameDerivers";
 import type {
 	DecisionReducers,
+	Logger,
 	ReducerReturnType,
 } from "../helperTypes/Reducers";
 
@@ -25,9 +26,10 @@ export function reduceDecision<
 	decisionReducers: DecisionReducers<Game>,
 	model: Draft<ModelOf<Game>>,
 	decision: Immutable<DecisionOf<Game> & { type: T }>,
-	choice: Immutable<ChoiceOf<Game> & { type: T }>
+	choice: Immutable<ChoiceOf<Game> & { type: T }>,
+	logger: Logger<Game>
 ): ReducerReturnType<DecisionOf<Game>, InterruptOf<Game>> {
 	const reducer = decisionReducers[decision.type as T];
 	if (reducer === undefined) throw "unexpected decision type";
-	return reducer(model, decision, choice);
+	return reducer(model, decision, choice, logger);
 }
