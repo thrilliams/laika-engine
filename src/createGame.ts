@@ -5,33 +5,24 @@ import {
 	type Draft,
 	type Immutable,
 } from "immer";
-import type { SafeParseReturnType } from "zod";
-import type { ChoiceValidators } from "./ChoiceValidators";
-import { addHistoryObject, type Game as GameType } from "./Game";
-import type { Next } from "./Next";
+import { addHistoryObject } from "./gameLogic/addHistoryObject";
+import { createInitialGameState } from "./gameLogic/createInitialGameState";
+import { reduceDecision } from "./gameLogic/reduceDecision";
+import { reduceNext } from "./gameLogic/reduceNext";
+import { validateChoiceFromModel } from "./gameLogic/validateChoiceFromModel";
+import type { GameType } from "./gameType/GameType";
+import type { Next } from "./gameType/Next";
+import type { ChoiceValidators } from "./helperTypes/ChoiceValidators";
+import type {
+	ChoiceOf,
+	DecisionOf,
+	InterruptOf,
+	ModelOf,
+} from "./helperTypes/GameDerivers";
 import type {
 	DecisionReducers,
 	InterruptReducers,
-	ReducerReturnType,
-} from "./Reducers";
-
-export type ModelOf<G extends GameType> = G extends GameType<infer M>
-	? M
-	: never;
-export type DecisionOf<G extends GameType> = G extends GameType<any, infer D>
-	? D
-	: never;
-export type ChoiceOf<G extends GameType> = G extends GameType<any, any, infer C>
-	? C
-	: never;
-export type InterruptOf<G extends GameType> = G extends GameType<
-	any,
-	any,
-	any,
-	infer I
->
-	? I
-	: never;
+} from "./helperTypes/Reducers";
 
 /**
  * creates a game given the rules that dictate the transitions between that game's valid states
@@ -61,97 +52,6 @@ export function createGame<Game extends GameType, Options>(parameters: {
 	type Choice = ChoiceOf<Game>;
 
 	/**
-	 * evaluates an arbitrary choice for validity, given the current state
-	 * @param model the current model from the payload
-	 * @param decision the current decision from the payload
-	 * @param choice the current choice being evaluated for validity
-	 * @returns the results of the zod type being evaluated for validity
-	 */
-	function validateChoiceFromModel<T extends Choice["type"] = Choice["type"]>(
-		model: Immutable<Model>,
-		decision: Immutable<Decision & { type: T }>,
-		choice: unknown
-	) {
-		const validator = parameters.choiceValidators[decision.type as T];
-		if (validator === undefined) throw "unexpected choice type";
-
-		// validators do not include choice typing, for convenience's sake, so we add that here
-		const zodType = validator(model, decision);
-
-		// asserting the type of the return value here as something both immutable and neater than the inferred one
-		return zodType.safeParse(choice) as Immutable<
-			SafeParseReturnType<unknown, Choice & { type: T }>
-		>;
-	}
-
-	/**
-	 * reduces a decision and its choice and applies them to the model
-	 * @param model the current draft of the model, provided by immer and passed by `reduceChoice`
-	 * @param decision the current decision, taken from the payload
-	 * @param choice the current choice (after passing validation)
-	 * @returns the decision and next entries to append to the state
-	 */
-	function reduceDecision<T extends Decision["type"] = Decision["type"]>(
-		model: Draft<Model>,
-		decision: Immutable<Decision & { type: T }>,
-		choice: Immutable<Choice & { type: T }>
-	): ReducerReturnType<Decision, Interrupt> {
-		const reducer = parameters.decisionReducers[decision.type as T];
-		if (reducer === undefined) throw "unexpected decision type";
-		return reducer(model, decision, choice);
-	}
-
-	/**
-	 * reduces an entry from next and applies it to the model
-	 * @param model the current draft of the model, provided by immer and passed by `reduceChoice`
-	 * @param interrupt the interrupt to reduce to a valid state
-	 * @returns the decision and next entries to append to the state
-	 */
-	function reduceInterrupt<T extends Interrupt["type"] = Interrupt["type"]>(
-		model: Draft<Model>,
-		interrupt: Immutable<Interrupt & { type: T }>
-	): ReducerReturnType<Decision, Interrupt> {
-		const reducer = parameters.interruptReducers[interrupt.type as T];
-		if (reducer === undefined) throw "unexpected interrupt type";
-		return reducer(model, interrupt);
-	}
-
-	/**
-	 * reduces an entry from next and applies it to the model
-	 * @param model the current draft of the model, provided by immer and passed by `reduceChoice`
-	 * @param next the next entry to reduce to a valid state
-	 * @returns the decision and next entires to append to the state
-	 */
-	function reduceNext(
-		model: Draft<Model>,
-		next: Immutable<Next<Decision, Interrupt>>
-	): ReducerReturnType<Decision, Interrupt> {
-		if (next.kind === "decision") return [next.value as Decision];
-		if (next.kind === "interrupt")
-			return reduceInterrupt(model, next.value);
-		throw "unexpected next kind";
-	}
-
-	/**
-	 * creates the initial state of the game. a helpful wrapper around `createInitialModel`
-	 * @param options options passed into `createInitialModel`
-	 * @returns a valid game object that can be used with `reduceChoice`
-	 */
-	function createInitialGameState(options: Options): Game {
-		const { model, decision } = parameters.createInitialModel(options);
-		return {
-			state: {
-				model,
-				decision,
-				next: [],
-			},
-			history: [],
-			future: [],
-			// don't love this
-		} as unknown as Game;
-	}
-
-	/**
 	 * validates a choice from the current game object. if this succeeds, that choice can be passed to `reduceChoice`
 	 * @param game the current game object. this will not be modified.
 	 * @param choice the current choice to evaluate for validity.
@@ -162,6 +62,7 @@ export function createGame<Game extends GameType, Options>(parameters: {
 		choice: Choice & { type: T }
 	) {
 		return validateChoiceFromModel(
+			parameters.choiceValidators,
 			game.state.model as Immutable<Model>,
 			game.state.decision as Immutable<Decision>,
 			choice
@@ -183,6 +84,7 @@ export function createGame<Game extends GameType, Options>(parameters: {
 			error,
 			data: validatedChoice,
 		} = validateChoiceFromModel(
+			parameters.choiceValidators,
 			game.state.model as Immutable<Model>,
 			game.state.decision as Immutable<Decision>,
 			choice
@@ -196,6 +98,7 @@ export function createGame<Game extends GameType, Options>(parameters: {
 			(draft) => {
 				// first, attempt regular resolution for the current decision
 				let [decision, ...next] = reduceDecision(
+					parameters.decisionReducers,
 					draft.model as Draft<Model>,
 					draft.decision as Immutable<Decision>,
 					validatedChoice
@@ -209,6 +112,7 @@ export function createGame<Game extends GameType, Options>(parameters: {
 					let first = draft.next.shift()!;
 
 					[decision, ...next] = reduceNext(
+						parameters.interruptReducers,
 						draft.model as Draft<Model>,
 						first as Immutable<Next<Decision, Interrupt>>
 					);
@@ -244,8 +148,15 @@ export function createGame<Game extends GameType, Options>(parameters: {
 
 	enablePatches();
 
+	// prettier-ignore
+	// (it hates instantiation expressions)
+	const boundCreateInitialGameState = (createInitialGameState<
+		Game,
+		Options
+	>).bind(undefined, parameters.createInitialModel);
+
 	return {
-		createInitialGameState,
+		createInitialGameState: boundCreateInitialGameState,
 		validateChoice,
 		reduceChoice,
 	};

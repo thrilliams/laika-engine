@@ -1,7 +1,7 @@
 import type { Immutable } from "immer";
 import type { ZodType } from "zod";
-import type { Game as GameType } from "./Game";
-import type { ChoiceOf, DecisionOf, ModelOf } from "./createGame";
+import type { GameType } from "../gameType/GameType";
+import type { ChoiceOf, DecisionOf, ModelOf } from "./GameDerivers";
 
 export type ChoiceValidator<
 	Game extends GameType,

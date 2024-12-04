@@ -1,7 +1,12 @@
 import type { Draft, Immutable } from "immer";
-import type { Next } from "./Next";
-import type { Game as GameType } from "./Game";
-import type { ChoiceOf, DecisionOf, InterruptOf, ModelOf } from "./createGame";
+import type { GameType } from "../gameType/GameType";
+import type { Next } from "../gameType/Next";
+import type {
+	ChoiceOf,
+	DecisionOf,
+	InterruptOf,
+	ModelOf,
+} from "./GameDerivers";
 
 export type ReducerReturnType<Decision, Interrupt> =
 	| [Decision, ...Next<Decision, Interrupt>[]]

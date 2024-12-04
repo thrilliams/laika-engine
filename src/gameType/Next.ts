@@ -1,4 +1,4 @@
-import type { Prettify } from "./Prettify";
+import type { Prettify } from "../helperTypes/Prettify";
 
 type NextKind =
 	// representing a single "action" with multiple variant decision points.

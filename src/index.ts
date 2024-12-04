@@ -1,9 +1,12 @@
 export { createGame } from "./createGame";
-export { createHelperWrappers } from "./createHelperWrappers";
+export { createHelperWrappers } from "./gameLogic/createHelperWrappers";
 
-export type { Game } from "./Game";
-export type { ReducerReturnType } from "./Reducers";
-export type { MaybeDraft, MatchReadonly } from "./createHelperWrappers";
+export type {
+	MatchReadonly,
+	MaybeDraft,
+} from "./gameLogic/createHelperWrappers";
+export type { GameType as Game } from "./gameType/GameType";
+export type { ReducerReturnType } from "./helperTypes/Reducers";
 
 // also re-export types from immer
 export type { Draft, Immutable } from "immer";
