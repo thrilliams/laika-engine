@@ -10,6 +10,8 @@ import type {
 } from "./GameDerivers";
 
 export type Logger<Game extends GameType> = (
+	type: "before" | "after"
+) => (
 	stringParts: TemplateStringsArray,
 	...context: LogObjectContextOf<Game>[]
 ) => void;

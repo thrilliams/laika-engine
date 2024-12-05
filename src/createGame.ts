@@ -56,18 +56,26 @@ export function createGame<Game extends GameType, Options>(parameters: {
 	type Choice = ChoiceOf<Game>;
 
 	/**
-	 * produces the game state as it existed at the start of a choice as referenced by that choice's referent history object id. used primarily for logging context.
+	 * produces the game state as it existed at one side of a choice as referenced by that choice's referent history object id. used primarily for logging context.
 	 * @param game the current game object. this will not be modified.
 	 * @param historyObjectID the id of the history object to roll back the state to.
-	 * @returns a game state as it was before the choice was made
+	 * @param type specify which side of the choice to return the state from.
+	 * @returns a game state as it was adjacent to the choice that was made.
 	 */
-	function getStateByID(game: Game, historyObjectID: HistoryObjectID) {
+	function getStateByID(
+		game: Game,
+		historyObjectID: HistoryObjectID,
+		type: "before" | "after"
+	) {
 		const index = game.history.findIndex(
 			({ id }) => id === historyObjectID
 		);
 		if (index === -1) return null;
+
 		const patchSequence =
-			index === 0 ? game.history : game.history.slice(index);
+			type === "before"
+				? game.history.slice(index)
+				: game.history.slice(index + 1);
 
 		let state = game.state;
 		for (const historyObject of patchSequence.toReversed())
@@ -123,14 +131,17 @@ export function createGame<Game extends GameType, Options>(parameters: {
 		const [nextState, patches, inversePatches] = produceWithPatches(
 			game.state,
 			(draft) => {
-				const logger: Logger<Game> = (stringParts, ...context) =>
-					draft.log.push(
-						castDraft({
-							historyObjectID: id,
-							stringParts,
-							context,
-						})
-					);
+				const logger: Logger<Game> =
+					(side) =>
+					(stringParts, ...context) =>
+						draft.log.push(
+							castDraft({
+								historyObjectID: id,
+								side,
+								stringParts,
+								context,
+							})
+						);
 
 				// first, attempt regular resolution for the current decision
 				let [decision, ...next] = reduceDecision(
