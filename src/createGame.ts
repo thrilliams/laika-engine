@@ -1,4 +1,5 @@
 import {
+	applyPatches,
 	castDraft,
 	enablePatches,
 	produceWithPatches,
@@ -25,6 +26,7 @@ import type {
 	InterruptReducers,
 	Logger,
 } from "./helperTypes/Reducers";
+import type { HistoryObjectID } from "./gameType/HistoryObject";
 
 /**
  * creates a game given the rules that dictate the transitions between that game's valid states
@@ -52,6 +54,27 @@ export function createGame<Game extends GameType, Options>(parameters: {
 	type Decision = DecisionOf<Game>;
 	type Interrupt = InterruptOf<Game>;
 	type Choice = ChoiceOf<Game>;
+
+	/**
+	 * produces the game state as it existed at the start of a choice as referenced by that choice's referent history object id. used primarily for logging context.
+	 * @param game the current game object. this will not be modified.
+	 * @param historyObjectID the id of the history object to roll back the state to.
+	 * @returns a game state as it was before the choice was made
+	 */
+	function getStateByID(game: Game, historyObjectID: HistoryObjectID) {
+		const index = game.history.findIndex(
+			({ id }) => id === historyObjectID
+		);
+		if (index === -1) return null;
+		const patchSequence =
+			index === 0 ? game.history : game.history.slice(index);
+
+		let state = game.state;
+		for (const historyObject of patchSequence.toReversed())
+			state = applyPatches(state, historyObject.inversePatches);
+
+		return state;
+	}
 
 	/**
 	 * validates a choice from the current game object. if this succeeds, that choice can be passed to `reduceChoice`
@@ -172,6 +195,7 @@ export function createGame<Game extends GameType, Options>(parameters: {
 	>).bind(undefined, parameters.createInitialModel);
 
 	return {
+		getStateByID,
 		createInitialGameState: boundCreateInitialGameState,
 		validateChoice,
 		reduceChoice,
