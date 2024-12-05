@@ -7,12 +7,16 @@ import {
 	type Immutable,
 } from "immer";
 import { addHistoryObject } from "./gameLogic/addHistoryObject";
-import { createInitialGameState } from "./gameLogic/createInitialGameState";
+import {
+	createInitialGame,
+	type CreateInitialPayload,
+} from "./gameLogic/createInitialGame";
 import { reduceDecision } from "./gameLogic/reduceDecision";
 import { reduceNext } from "./gameLogic/reduceNext";
 import { uuid } from "./gameLogic/uuid";
 import { validateChoiceFromModel } from "./gameLogic/validateChoiceFromModel";
 import type { GameType } from "./gameType/GameType";
+import type { HistoryObjectID } from "./gameType/HistoryObject";
 import type { Next } from "./gameType/Next";
 import type { ChoiceValidators } from "./helperTypes/ChoiceValidators";
 import type {
@@ -26,7 +30,6 @@ import type {
 	InterruptReducers,
 	Logger,
 } from "./helperTypes/Reducers";
-import type { HistoryObjectID } from "./gameType/HistoryObject";
 
 /**
  * creates a game given the rules that dictate the transitions between that game's valid states
@@ -38,11 +41,7 @@ import type { HistoryObjectID } from "./gameType/HistoryObject";
  * @returns functions that compose the parameter functions into a unified state machine
  */
 export function createGame<Game extends GameType, Options>(parameters: {
-	createInitialModel: (options: Options) => {
-		model: ModelOf<Game>;
-		decision: DecisionOf<Game>;
-		next: Next<DecisionOf<Game>, InterruptOf<Game>>[];
-	};
+	createInitialPayload: CreateInitialPayload<Game, Options>;
 	choiceValidators: ChoiceValidators<Game>;
 	decisionReducers: DecisionReducers<Game>;
 	interruptReducers: InterruptReducers<Game>;
@@ -200,10 +199,10 @@ export function createGame<Game extends GameType, Options>(parameters: {
 
 	// prettier-ignore
 	// (it hates instantiation expressions)
-	const boundCreateInitialGameState = (createInitialGameState<
+	const boundCreateInitialGameState = (createInitialGame<
 		Game,
 		Options
-	>).bind(undefined, parameters.createInitialModel);
+	>).bind(undefined, parameters.createInitialPayload);
 
 	return {
 		getStateByID,

@@ -6,6 +6,8 @@ export type {
 	MaybeDraft,
 } from "./gameLogic/createHelperWrappers";
 export type { GameType } from "./gameType/GameType";
+export type { Next } from "./gameType/Next";
+export type { Prettify } from "./helperTypes/Prettify";
 export type {
 	DecisionReducer,
 	InterruptReducer,
