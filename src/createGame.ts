@@ -65,7 +65,7 @@ export function createGame<Game extends GameType, Options>(parameters: {
 		game: Game,
 		historyObjectID: HistoryObjectID,
 		type: "before" | "after"
-	) {
+	): Game["state"] | null {
 		const index = game.history.findIndex(
 			({ id }) => id === historyObjectID
 		);
@@ -137,7 +137,7 @@ export function createGame<Game extends GameType, Options>(parameters: {
 							castDraft({
 								historyObjectID: id,
 								side,
-								stringParts,
+								stringParts: stringParts.raw,
 								context,
 							})
 						);
